@@ -236,6 +236,7 @@
           (testing (format "%s %s function works as expected on %s column for driver %s" op unit col-type driver/*driver*)
             (is (= (set expected) (set (test-date-math query))))))))))
 
+
 (deftest date-math-with-extract-test
   (mt/test-drivers (mt/normal-drivers-with-feature :date-arithmetics)
     (mt/dataset times-mixed

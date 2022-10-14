@@ -271,6 +271,8 @@
                              (hx/+ (extract-integer :dow expr) 1)
                              (driver.common/start-of-week-offset-for-day :sunday)))
 
+(defmethod sql.qp/date [:postgres :week-of-year-iso8601] [_ _ expr] (extract-integer :week expr))
+
 (defmethod sql.qp/date [:postgres :week]
   [_ _ expr]
   (sql.qp/adjust-start-of-week :postgres (partial date-trunc :week) expr))

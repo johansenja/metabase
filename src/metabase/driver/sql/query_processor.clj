@@ -99,18 +99,6 @@
   [_driver]
   :%now)
 
-(def temporal-extract-unit->date-unit
-  "Mapping from the unit we used in `extract` function to the unit we used for `date` function."
-  {:second      :second-of-minute
-   :minute      :minute-of-hour
-   :hour        :hour-of-day
-   :day-of-week :day-of-week
-   :day         :day-of-month
-   :week        :week-of-year
-   :month       :month-of-year
-   :quarter     :quarter-of-year
-   :year        :year-of-era})
-
 ;; TODO - rename this to `temporal-bucket` or something that better describes what it actually does
 (defmulti date
   "Return a HoneySQL form for truncating a date or timestamp field or value to a given resolution, or extracting a date
@@ -588,7 +576,7 @@
 
 (defmethod ->honeysql [:sql :temporal-extract]
   [driver [_ arg unit]]
-  (date driver (temporal-extract-unit->date-unit unit) (->honeysql driver arg)))
+  (date driver unit (->honeysql driver arg)))
 
 (defmethod ->honeysql [:sql :date-add]
   [driver [_ arg amount unit]]
@@ -597,6 +585,46 @@
 (defmethod ->honeysql [:sql :date-subtract]
   [driver [_ arg amount unit]]
   (add-interval-honeysql-form driver (->honeysql driver arg) (- amount) unit))
+
+(defn days-still-start-of-first-week
+  "How many days till the first day of first week?"
+  [driver expr _start-of-week]
+  (let [clause (date driver :year expr)
+        clause (->honeysql driver [:date-add clause 7 :day])
+        clause (date driver :week clause)]
+   (date driver :day-of-year clause)))
+
+;; US consider 1st Jan is the first week. The first Sunday will be second week
+(defmethod date [:sql :week-of-year-us] [driver _ expr]
+  (let [clause            (->honeysql driver expr)
+        first-day-of-year (date driver :year clause)
+        doy               (date driver :day-of-year clause)
+        dssofw            (days-still-start-of-first-week driver first-day-of-year nil)]
+    (hx/+
+      1
+      (hx/ceil
+        (hx/abs
+         (hx//
+           (hx/-
+             (hx/+ doy 7)
+             dssofw)
+           7))))))
+
+(defmethod date [:sql :week-of-year-instance] [driver _ expr]
+  (let [clause            (->honeysql driver expr)
+        first-day-of-year (date driver :year clause)
+        doy               (date driver :day-of-year clause)
+        dssofw            (days-still-start-of-first-week driver first-day-of-year nil)]
+    (hx/+
+      1
+      (hx/ceil
+        (hx/abs
+          (hx//
+            (hx/-
+              (hx/+ doy 7)
+              dssofw)
+            7))))))
+
 
 ;;; +----------------------------------------------------------------------------------------------------------------+
 ;;; |                                            Field Aliases (AS Forms)                                            |

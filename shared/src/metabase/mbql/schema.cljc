@@ -81,8 +81,24 @@
 (def TemporalExtractUnits
   "Valid units to extract from a temporal."
   (s/named
-    (apply s/enum #{:second :minute :hour :day :day-of-week :week :month :quarter :year})
+    (apply s/enum #{:year-of-era
+                    :quarter-of-year
+                    :month-of-year
+                    :week-of-year-iso8601
+                    :week-of-year-us
+                    :week-of-year-instance
+                    :day-of-month
+                    :day-of-week
+                    :hour-of-day
+                    :minute-of-day
+                    :second-of-minute})
     "temporal-extract-units"))
+
+(def ExtractWeekModes
+  "Valid modes to extract weeks."
+  (s/named
+    (apply s/enum #{:iso8601 :us :instance})
+    "extract-week-modes"))
 
 (def ^:private RelativeDatetimeUnit
   (s/named
@@ -632,7 +648,8 @@
 
 (defclause ^{:requires-features #{:temporal-extract}} temporal-extract
   datetime DateTimeExpressionArg
-  unit     TemporalExtractUnits)
+  unit     TemporalExtractUnits
+  mode     (optional ExtractWeekModes)) ;; only for get-week
 
 ;; SUGAR CLAUSE: get-year, get-month... clauses are all sugars clause that will be rewritten as [:temporal-extract column :year]
 (defclause ^{:requires-features #{:temporal-extract}} ^:sugar get-year
@@ -645,7 +662,8 @@
   date DateTimeExpressionArg)
 
 (defclause ^{:requires-features #{:temporal-extract}} ^:sugar get-week
-  date DateTimeExpressionArg)
+  date DateTimeExpressionArg
+  mode ExtractWeekModes)
 
 (defclause ^{:requires-features #{:temporal-extract}} ^:sugar get-day
   date DateTimeExpressionArg)

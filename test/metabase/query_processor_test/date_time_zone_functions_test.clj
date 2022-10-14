@@ -45,7 +45,22 @@
     [[1 #t "2004-03-19 09:19:09" #t "2004-03-19" "2004-03-19 09:19:09" "2004-03-19"]
      [2 #t "2008-06-20 10:20:10" #t "2008-06-20" "2008-06-20 10:20:10" "2008-06-20"]
      [3 #t "2012-11-21 11:21:11" #t "2012-11-21" "2012-11-21 11:21:11" "2012-11-21"]
-     [4 #t "2012-11-21 11:21:11" #t "2012-11-21" "2012-11-21 11:21:11" "2012-11-21"]]]])
+     [4 #t "2012-11-21 11:21:11" #t "2012-11-21" "2012-11-21 11:21:11" "2012-11-21"]]]
+   ["weeks" [{:field-name "index"
+              :base-type :type/Integer}
+             {:field-name "description"
+              :base-type :type/Text}
+             {:field-name "d"
+              :base-type :type/Date}]
+    [[1 "1st saturday"  #t "2000-01-01"]
+     [2 "1st sunday"    #t "2000-01-02"]
+     [3 "1st monday"    #t "2000-01-03"]
+     [4 "1st wednesday" #t "2000-01-04"]
+     [5 "1st tuesday"   #t "2000-01-05"]
+     [6 "1st thursday"  #t "2000-01-06"]
+     [7 "1st friday"    #t "2000-01-07"]
+     [8 "2nd saturday"  #t "2000-01-08"]
+     [9 "2nd sunday"    #t "2000-01-09"]]]])
 
 (def ^:private temporal-extraction-op->unit
   {:get-second      :second-of-minute
@@ -53,7 +68,6 @@
    :get-hour        :hour-of-day
    :get-day-of-week :day-of-week
    :get-day         :day-of-month
-   :get-week        :week-of-year
    :get-month       :month-of-year
    :get-quarter     :quarter-of-year
    :get-year        :year})
@@ -81,7 +95,7 @@
     (mt/test-drivers (disj (mt/normal-drivers-with-feature :temporal-extract) :mongo)
       (testing "with datetime columns"
         (doseq [[col-type field-id] [[:datetime (mt/id :times :dt)] [:text-as-datetime (mt/id :times :as_dt)]]
-                op                  [:get-year :get-quarter :get-month :get-week :get-day
+                op                  [:get-year :get-quarter :get-month :get-day
                                      :get-day-of-week :get-hour :get-minute :get-second]
                 {:keys [expected-fn query-fn]}
                 extraction-test-cases]
@@ -90,7 +104,7 @@
 
      (testing "with date columns"
        (doseq [[col-type field-id] [[:date (mt/id :times :d)] [:text-as-date (mt/id :times :as_d)]]
-               op                  [:get-year :get-quarter :get-month :get-week :get-day :get-day-of-week]
+               op                  [:get-year :get-quarter :get-month :get-day :get-day-of-week]
                {:keys [expected-fn query-fn]}
                extraction-test-cases]
         (testing (format "extract %s function works as expected on %s column for driver %s" op col-type driver/*driver*)
@@ -99,7 +113,7 @@
     (mt/test-driver :mongo
       (testing "with datetimes columns"
         (let [[col-type field-id] [:datetime (mt/id :times :dt)]]
-          (doseq [op              [:get-year :get-quarter :get-month :get-week :get-day
+          (doseq [op              [:get-year :get-quarter :get-month :get-day
                                    :get-day-of-week :get-hour :get-minute :get-second]
                   {:keys [expected-fn query-fn]}
                   extraction-test-cases]
@@ -108,7 +122,7 @@
 
       (testing "with date columns"
         (let [[col-type field-id] [:date (mt/id :times :d)]]
-          (doseq [op               [:get-year :get-quarter :get-month :get-week :get-day :get-day-of-week]
+          (doseq [op               [:get-year :get-quarter :get-month :get-day :get-day-of-week]
                   {:keys [expected-fn query-fn]}
                   extraction-test-cases]
            (testing (format "extract %s function works as expected on %s column for driver %s" op col-type driver/*driver*)
@@ -147,6 +161,59 @@
                            :fields [[:field (mt/id :times :index) nil]]}}]]
         (testing title
           (is (= expected (test-temporal-extract query))))))))
+
+(defmacro with-start-of-week
+  "With start of week."
+  [start-of-week & body]
+  `(mt/with-temporary-setting-values [start-of-week ~start-of-week]
+     ~@body))
+
+(defn test-extract-week
+  [field-id method]
+  (->> (mt/mbql-query weeks {:expressions {"expr" [:get-week [:field field-id nil ] method]}
+                             :fields      [[:expression "expr"]]})
+      mt/process-query
+      (mt/formatted-rows [int])
+      (map first)))
+
+#_(mt/with-driver :postgres
+    (mt/dataset times-mixed
+                (->>
+                  (mt/mbql-query weeks {:expressions {"expr" [:get-week [:field (mt/id :weeks :d) nil] :us]}
+                                        :fields      [[:expression "expr"]]})
+                  mt/process-query
+                  (mt/formatted-rows [int])
+                  (map first))))
+
+#_(is (= [;; sat sun mon wed tue thu fri
+          [  52  52  1   1   1   1   1]
+          [  1   2   2   2   2   2   2]]
+         (->> (mt/mbql-query weeks {:expressions {"iso8601" [:get-week [:field (mt/id :weeks :d) nil] :iso8601]
+                                                  "us"      [:get-week [:field (mt/id :weeks :d) nil] :us]}
+                                    :fields      [[:expression "iso8601"]
+                                                  [:expression "us"]]})
+          mt/process-query
+          (mt/formatted-rows [int]))))
+
+(deftest extract-week-tests
+  (mt/test-drivers (mt/normal-drivers-with-feature :temporal-extract)
+    (mt/dataset times-mixed
+      #_(testing "iso8601 week"
+          (is (= [52 52 1 1 1 1 1 1 1]
+                 (test-extract-week (mt/id :weeks :d) :iso8601))))
+
+      (testing "us week"
+        (is (= [1 2 2 2 2 2 2 2 3]
+               (test-extract-week (mt/id :weeks :d) :us))))
+
+      (testing "instance week"
+        (is (= [1 2 2 2 2 2 2 2 3]
+               (test-extract-week (mt/id :weeks :d) :instance)))
+
+        (with-start-of-week :monday
+          (is (= [1 1 2 2 2 2 2 2 2]
+                 (test-extract-week (mt/id :weeks :d) :instance))))))))
+
 
 ;;; +----------------------------------------------------------------------------------------------------------------+
 ;;; |                                              Date arithmetics tests                                            |

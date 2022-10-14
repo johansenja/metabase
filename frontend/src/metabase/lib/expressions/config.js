@@ -340,8 +340,8 @@ export const MBQL_CLAUSES = {
     displayName: `week`,
     type: "number",
     args: ["expression"],
+    hasOptions: true, // optional mode parameter
   },
-
   "get-day": {
     displayName: `day`,
     type: "number",

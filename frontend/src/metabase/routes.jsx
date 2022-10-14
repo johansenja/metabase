@@ -42,6 +42,7 @@ import PulseEditApp from "metabase/pulse/containers/PulseEditApp";
 import SetupApp from "metabase/setup/containers/SetupApp";
 // new question
 import NewQueryOptions from "metabase/new_query/containers/NewQueryOptions";
+import NewDatasetOptions from "metabase/new_query/containers/NewDatasetOptions";
 
 import CreateDashboardModal from "metabase/components/CreateDashboardModal";
 
@@ -91,7 +92,6 @@ import { trackPageView } from "metabase/lib/analytics";
 import { getAdminPaths } from "metabase/admin/app/selectors";
 
 import ActionPage from "metabase/writeback/containers/ActionCreatorPage";
-import ActionsListPage from "metabase/writeback/containers/ActionsListPage";
 
 import ModelDetailPage from "metabase/models/containers/ModelDetailPage";
 
@@ -201,7 +201,7 @@ export const getRoutes = store => (
 
       {/* MAIN */}
       <Route component={IsAuthenticated}>
-        {/* The global all hands rotues, things in here are for all the folks */}
+        {/* The global all hands routes, things in here are for all the folks */}
         <Route
           path="/"
           component={HomePage}
@@ -285,6 +285,11 @@ export const getRoutes = store => (
 
         <Route path="/model">
           <IndexRoute component={QueryBuilder} />
+          <Route
+            path="new"
+            title={t`New Model`}
+            component={NewDatasetOptions}
+          />
           <Route path="notebook" component={QueryBuilder} />
           <Route path=":slug" component={QueryBuilder} />
           <Route path=":slug/notebook" component={QueryBuilder} />
@@ -395,8 +400,6 @@ export const getRoutes = store => (
           <Route path="create" component={ActionPage} />
           <Route path=":actionId" component={ActionPage} />
         </Route>
-        {/* DEV PAGE: REMOVE BEFORE SHIPPING */}
-        <Route path="/actions" component={ActionsListPage} />
       </Route>
     </Route>
 

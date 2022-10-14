@@ -97,15 +97,28 @@ export default class SaveQuestionModal extends Component {
           : "create",
     };
 
-    const title = this.props.multiStep
-      ? t`First, save your question`
-      : t`Save question`;
+    const questionType = card.dataset ? "model" : "question";
+
+    const multiStepTitle =
+      questionType === "question"
+        ? t`First, save your question`
+        : t`First, save your model`;
+
+    const singleStepTitle =
+      questionType === "question" ? t`Save question` : t`Save model`;
+
+    const title = this.props.multiStep ? multiStepTitle : singleStepTitle;
 
     const showSaveType =
       !card.id &&
       !!originalCard &&
       !originalCard.dataset &&
       originalCard.can_write;
+
+    const nameInputPlaceholder =
+      questionType === "question"
+        ? t`What is the name of your question?`
+        : t`What is the name of your model?`;
 
     return (
       <ModalContent
@@ -148,7 +161,7 @@ export default class SaveQuestionModal extends Component {
                       autoFocus
                       name="name"
                       title={t`Name`}
-                      placeholder={t`What is the name of your card?`}
+                      placeholder={nameInputPlaceholder}
                     />
                     <FormField
                       name="description"

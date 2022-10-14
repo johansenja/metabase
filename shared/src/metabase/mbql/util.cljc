@@ -261,7 +261,7 @@
    [:get-day         nil]       :day-of-month
    [:get-day-of-week nil]       :day-of-week
    [:get-hour        nil]       :hour-of-day
-   [:get-minute      nil]       :minute-of-day
+   [:get-minute      nil]       :minute-of-hour
    [:get-second      nil]       :second-of-minute})
 
 (def ^:private temporal-extract-ops

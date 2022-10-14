@@ -602,13 +602,14 @@
         dssofw            (days-still-start-of-first-week driver first-day-of-year nil)]
     (hx/+
       1
-      (hx/ceil
-        (hx/abs
-         (hx//
-           (hx/-
-             (hx/+ doy 7)
-             dssofw)
-           7))))))
+      (->honeysql driver
+                  [:ceil
+                   (hx/abs
+                    (hx//
+                      (hx/-
+                        (hx/+ doy 7)
+                        dssofw)
+                      7))]))))
 
 (defmethod date [:sql :week-of-year-instance] [driver _ expr]
   (let [clause            (->honeysql driver expr)
@@ -617,13 +618,14 @@
         dssofw            (days-still-start-of-first-week driver first-day-of-year nil)]
     (hx/+
       1
-      (hx/ceil
-        (hx/abs
-          (hx//
-            (hx/-
-              (hx/+ doy 7)
-              dssofw)
-            7))))))
+      (->honeysql driver
+                  [:ceil
+                   (hx/abs
+                     (hx//
+                       (hx/-
+                         (hx/+ doy 7)
+                         dssofw)
+                       7))]))))
 
 
 ;;; +----------------------------------------------------------------------------------------------------------------+

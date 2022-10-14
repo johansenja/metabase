@@ -90,7 +90,7 @@
                     :day-of-month
                     :day-of-week
                     :hour-of-day
-                    :minute-of-day
+                    :minute-of-hour
                     :second-of-minute})
     "temporal-extract-units"))
 
